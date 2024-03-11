@@ -20,6 +20,11 @@ namespace Virtual_Ped
         public string Hunger { get; set; } = "Zufrieden";
         public string Stage { get; set; } = "Ei";
         public Random Chance { get; set; } = new Random();
+        public bool isSleeping { get; set; } = false;
+
+        public bool isEating { get; set; } = false;
+
+        public bool pooped { get; set; } = false;
 
         public Virtual_Ped(string name)
         {
@@ -62,6 +67,7 @@ namespace Virtual_Ped
             if (Full < 1 || Full > 1050)
             {
                 Dead();
+                timer.Stop();
                 return;
             }
 
@@ -94,109 +100,57 @@ namespace Virtual_Ped
                     Stage = "Teen";
                     break;
             }
-
+            
             if (Count > 4)
             {
                 if (Hour > 22 || Hour < 8)
                 {
-                    if (Count % 2 == 0)
-                    {
-                        BabySleep1();
-                    }
-                    else
-                    {
-                        BabySleep2();
-                    }
+                    isSleeping = true;
                 }
                 else
                 {
-                    if (Sick > 100)
+                    if (isSleeping && Full > 1000)
                     {
-                        if (Count % 2 == 0)
-                        {
-                            BabySick();
-                        }
-                        else
-                        {
-                            BabySick2();
-                        }
-                        Full -= 25;
-                    }
-                    else
-                    {
-                        if (Eating == 0 && Poop < 10)
-                        {
-                            switch (Space)
-                            {
-                                case "Left":
-                                    MoveLeft();
-                                    NextSpace = "GoRight";
-                                    break;
-
-                                case "Right":
-                                    MoveRight();
-                                    NextSpace = "GoLeft";
-                                    break;
-
-                                case "GoLeft":
-                                    MoveMiddle();
-                                    NextSpace = "Left";
-                                    break;
-
-                                case "GoRight":
-                                    MoveMiddle();
-                                    NextSpace = "Right";
-                                    break;
-                            }
-                        }
-                        else if(Eating != 0 && Poop < 10)
-                        {
-                            switch (Eating)
-                            {
-                                case 1:
-                                    BabyEat2();
-                                    Eating--;
-                                    break;
-
-                                case 2:
-                                    BabyEat1();
-                                    Eating--;
-                                    break;
-
-                                case 3:
-                                    BabyEat2();
-                                    Eating--;
-                                    break;
-                            }
-                        }else if (Eating == 0 && Poop > 10)
-                        {
-                            if (Poop > 10)
-                            {
-                                if (Count % 2 == 0)
-                                {
-                                    BabyPoop1();
-                                }
-                                else
-                                {
-                                    BabyPoop2();
-                                }
-                                Sick += 2;
-                            }
-                            if (Poop > 20)
-                            {
-                                if (Count % 2 == 0)
-                                {
-                                    Baby2Poop1();
-                                }
-                                else
-                                {
-                                    Baby2Poop2();
-                                }
-                                Sick += 4;
-                            }
-                        }
+                        isSleeping = false;
                     }
                 }
+
+                if (isSleeping)
+                {
+                    Sleep();
+                }
+                else
+                {
+                    if (!isEating && !pooped)
+                    {
+                        Move();
+                    }
+                    if (isEating && !pooped)
+                    {
+                        Eat();
+                    }
+
+                    if (Eating == 0)
+                    {
+                        isEating = false;
+                    }
+                    if (Poop > 10)
+                    {
+                        pooped = true;
+                    }
+                    if (Poop < 10)
+                    {
+                        if (pooped)
+                        {
+                            pooped = false;
+                        }
+                    }
+                    if (pooped && !isEating)
+                    {
+                        Pooped();
+                    }
+                }
+
 
 
                 Console.WriteLine($"Status von {Name}:");
@@ -246,10 +200,12 @@ namespace Virtual_Ped
 
             if (Full < 1000)
             {
+                isSleeping = true;
                 Hunger = "Im Fresskoma!";
             }
             if (Full < 900)
             {
+                isSleeping = false;
                 Hunger = "Zu voll";
             }
             if (Full < 800)
@@ -287,6 +243,107 @@ namespace Virtual_Ped
 
             buildUI();
         }
+
+        public void Sleep()
+        {
+            if (isSleeping)
+            {
+                if (Count % 2 == 0)
+                {
+                    BabySleep1();
+                }
+                else
+                {
+                    BabySleep2();
+                }
+            }
+        }
+
+        public void Eat()
+        {
+            switch (Eating)
+            {
+                case 1:
+                    BabyEat2();
+                    Eating--;
+                    break;
+
+                case 2:
+                    BabyEat1();
+                    Eating--;
+                    break;
+
+                case 3:
+                    BabyEat2();
+                    Eating--;
+                    break;
+            }
+
+            if (Eating == 0)
+            {
+                isEating = false;
+            }
+        }
+
+        public void Pooped()
+        {
+            if (Poop > 10)
+            {
+                if (Count % 2 == 0)
+                {
+                    BabyPoop1();
+                }
+                else
+                {
+                    BabyPoop2();
+                }
+                Sick += 2;
+            }
+            if (Poop > 20)
+            {
+                if (Count % 2 == 0)
+                {
+                    Baby2Poop1();
+                }
+                else
+                {
+                    Baby2Poop2();
+                }
+                Sick += 4;
+            }
+
+            if (Poop < 10)
+            {
+                pooped = false;
+            }
+        }
+
+        public void Move()
+        {
+            switch (Space)
+            {
+                case "Left":
+                    MoveLeft();
+                    NextSpace = "GoRight";
+                    break;
+
+                case "Right":
+                    MoveRight();
+                    NextSpace = "GoLeft";
+                    break;
+
+                case "GoLeft":
+                    MoveMiddle();
+                    NextSpace = "Left";
+                    break;
+
+                case "GoRight":
+                    MoveMiddle();
+                    NextSpace = "Right";
+                    break;
+            }
+        }
+
         public void MoveLeft()
         {
             switch (Stage)
@@ -643,6 +700,7 @@ namespace Virtual_Ped
             Full += 50;
             Poop++;
             Eating = 3;
+            isEating = true;
         }
 
         private void Clean_Click()
