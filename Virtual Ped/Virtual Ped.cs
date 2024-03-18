@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Timers;
+using Newtonsoft.Json;
 
 namespace Virtual_Ped
 {
@@ -34,8 +37,9 @@ namespace Virtual_Ped
 
         }
 
-        public void Start()
+        public bool Start()
         {
+            LoadState();
             bool exit = false;
             while (!exit)
             {
@@ -56,9 +60,20 @@ namespace Virtual_Ped
                         break;
                     case ConsoleKey.Escape:
                         exit = true;
+                        timer.Stop();
                         break;
                 }
             }
+            return exit;
+        }
+        public static List<Virtual_Ped> LoadState()
+        {
+            if (File.Exists("virtualPeds.json"))
+            {
+                string json = File.ReadAllText("virtualPeds.json");
+                return JsonConvert.DeserializeObject<List<Virtual_Ped>>(json);
+            }
+            return new List<Virtual_Ped>();
         }
 
         private void buildUI()
